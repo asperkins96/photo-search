@@ -1,0 +1,22 @@
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+# Python runtime for OpenCLIP embedding + captioning scripts.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 python3-pip \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+# Ensure Prisma client exists for worker runtime.
+RUN npx prisma generate
+
+# CPU-only torch wheels are enough for demo-scale workloads.
+RUN pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision \
+  && pip3 install --no-cache-dir open_clip_torch pillow
+
+CMD ["npm", "run", "worker:start"]

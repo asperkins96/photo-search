@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Photo {
+  id          String   @id @default(cuid())
+  originalKey String   @unique
+  mimeType    String
+  byteSize    Int?
+  status      PhotoStatus @default(QUEUED)
+  errorMessage String?
+  caption     String?
+  tags        String[] @default([])
+  isDemo      Boolean  @default(false)
+
+  width       Int?
+  height      Int?
+
+  takenAt     DateTime?
+  cameraMake  String?
+  cameraModel String?
+  lensModel   String?
+  iso         Int?
+  fNumber     Float?
+  shutter     String? // keep simple for now
+  focalLength Float?
+  gpsLat      Float?
+  gpsLon      Float?
+
+  blurDataUrl String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assets      Asset[]
+  embedding   Embedding?
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  photoId   String
+  type      AssetType
+  key       String
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  photo     Photo @relation(fields: [photoId], references: [id])
+
+  @@unique([photoId, type])
+}
+
+model Embedding {
+  photoId   String @id
+  model     String
+  // We'll add vector later via SQL migration for pgvector
+  createdAt DateTime @default(now())
+
+  photo     Photo @relation(fields: [photoId], references: [id])
+}
+
+enum AssetType {
+  THUMB
+  PREVIEW
+}
+
+enum PhotoStatus {
+  QUEUED
+  PROCESSING
+  READY
+  ERROR
+}

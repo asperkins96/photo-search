@@ -22,5 +22,117 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes floatMed {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0);
+  }
+}
+
+@keyframes floatFast {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -24px, 0);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 8s ease-in-out infinite;
+}
+
+.animate-float-med {
+  animation: floatMed 6.8s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: floatFast 5.8s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.animate-star-twinkle {
+  animation: starTwinkle 4.8s ease-in-out infinite;
+}
+
+@keyframes orbitA {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(1deg);
+  }
+}
+
+@keyframes orbitB {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(1deg);
+  }
+  50% {
+    transform: translate3d(8px, -12px, 0) rotate(-1deg);
+  }
+}
+
+@keyframes orbitC {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-8px, -10px, 0) rotate(1deg);
+  }
+}
+
+@keyframes orbitD {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(4px, -16px, 0) rotate(-1deg);
+  }
+}
+
+.animate-orbit-a {
+  animation: orbitA 7.2s ease-in-out infinite;
+}
+
+.animate-orbit-b {
+  animation: orbitB 8.4s ease-in-out infinite;
+}
+
+.animate-orbit-c {
+  animation: orbitC 6.9s ease-in-out infinite;
+}
+
+.animate-orbit-d {
+  animation: orbitD 9.1s ease-in-out infinite;
 }
