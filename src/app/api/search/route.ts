@@ -23,6 +23,13 @@ const DEFAULT_SEMANTIC_ONLY_MIN_SEPARATION = (() => {
   if (!Number.isFinite(parsed)) return 0.012;
   return Math.min(Math.max(parsed, 0.001), 0.08);
 })();
+const ENABLE_SEMANTIC_SEARCH = (() => {
+  if (process.env.SEARCH_ENABLE_SEMANTIC === "true") return true;
+  if (process.env.SEARCH_ENABLE_SEMANTIC === "false") return false;
+  // Default off on Vercel to avoid Python cold-start latency.
+  if (process.env.VERCEL) return false;
+  return true;
+})();
 
 type PendingRequest = {
   resolve: (vector: number[]) => void;
@@ -354,7 +361,7 @@ async function runLexicalQuery(params: {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  prewarmTextEmbedder();
+  if (ENABLE_SEMANTIC_SEARCH) prewarmTextEmbedder();
   const q = (searchParams.get("q") ?? "").trim();
   const limit = clampLimit(searchParams.get("limit"));
   const cameraModel = (searchParams.get("cameraModel") ?? "").trim();
@@ -428,12 +435,16 @@ export async function GET(req: Request) {
     const fetchLimit = Math.min(MAX_LIMIT, Math.max(limit * 3, limit));
     let semanticRows: SearchRow[] = [];
     let semanticError: string | null = null;
-    try {
-      const promptVectors = await Promise.all(buildQueryPromptEnsemble(q).map((prompt) => embedTextQuery(prompt)));
-      const vectorLiterals = promptVectors.map((vector) => `[${vector.join(",")}]`);
-      semanticRows = await runSemanticQuery({ vectorLiterals, limit: fetchLimit, orderBy, commonFilters });
-    } catch (error) {
-      semanticError = error instanceof Error ? error.message : "semantic embedder unavailable";
+    if (ENABLE_SEMANTIC_SEARCH) {
+      try {
+        const promptVectors = await Promise.all(buildQueryPromptEnsemble(q).map((prompt) => embedTextQuery(prompt)));
+        const vectorLiterals = promptVectors.map((vector) => `[${vector.join(",")}]`);
+        semanticRows = await runSemanticQuery({ vectorLiterals, limit: fetchLimit, orderBy, commonFilters });
+      } catch (error) {
+        semanticError = error instanceof Error ? error.message : "semantic embedder unavailable";
+      }
+    } else {
+      semanticError = "semantic-disabled";
     }
 
     const lexicalRows = await runLexicalQuery({ query: q, tokens, limit: fetchLimit, commonFilters });
