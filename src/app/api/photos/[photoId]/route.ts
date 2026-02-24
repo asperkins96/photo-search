@@ -25,7 +25,13 @@ export async function DELETE(_: Request, context: { params: Promise<{ photoId: s
     return NextResponse.json({ error: "R2 bucket env vars missing" }, { status: 500 });
   }
 
-  const derivativeKeys = Array.from(new Set(photo.assets.map((asset) => asset.key).filter(Boolean)));
+  const derivativeKeys = Array.from(
+    new Set(
+      photo.assets
+        .map((asset: { key: string }) => asset.key)
+        .filter((key): key is string => Boolean(key))
+    )
+  );
 
   try {
     if (photo.originalKey) {
