@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { join, Sql, sqltag as sql } from "@prisma/client/runtime/client";
 import { prisma } from "@/lib/prisma";
 import { resolveAssetUrl, type GalleryPhoto } from "@/lib/gallery";
 
@@ -258,12 +258,12 @@ async function mapRowsToPhotos(rows: SearchRow[]) {
 async function runSemanticQuery(params: {
   vectorLiterals: string[];
   limit: number;
-  orderBy: Prisma.Sql;
-  commonFilters: Prisma.Sql[];
+  orderBy: Sql;
+  commonFilters: Sql[];
 }) {
   const { vectorLiterals, limit, orderBy, commonFilters } = params;
-  const distExpr = Prisma.sql`LEAST(${Prisma.join(
-    vectorLiterals.map((literal) => Prisma.sql`(e."vector" <=> ${literal}::vector)`),
+  const distExpr = sql`LEAST(${join(
+    vectorLiterals.map((literal) => sql`(e."vector" <=> ${literal}::vector)`),
     ", "
   )})`;
 
@@ -287,7 +287,7 @@ async function runSemanticQuery(params: {
     JOIN "Photo" p ON p."id" = e."photoId"
     LEFT JOIN "Asset" thumb ON thumb."photoId" = p."id" AND thumb."type" = 'THUMB'::"AssetType"
     LEFT JOIN "Asset" preview ON preview."photoId" = p."id" AND preview."type" = 'PREVIEW'::"AssetType"
-    WHERE e."vector" IS NOT NULL AND ${Prisma.join(commonFilters, " AND ")}
+    WHERE e."vector" IS NOT NULL AND ${join(commonFilters, " AND ")}
     ORDER BY ${orderBy}
     LIMIT ${limit}
   `;
@@ -297,13 +297,13 @@ async function runLexicalQuery(params: {
   query: string;
   tokens: string[];
   limit: number;
-  commonFilters: Prisma.Sql[];
+  commonFilters: Sql[];
 }) {
   const { query, tokens, limit, commonFilters } = params;
   if (tokens.length === 0) return [];
 
   const likePattern = `%${query.toLowerCase()}%`;
-  const tokenArray = Prisma.sql`ARRAY[${Prisma.join(tokens.map((token) => Prisma.sql`${token}`), ", ")}]::text[]`;
+  const tokenArray = sql`ARRAY[${join(tokens.map((token) => sql`${token}`), ", ")}]::text[]`;
 
   return prisma.$queryRaw<SearchRow[]>`
     SELECT
@@ -342,7 +342,7 @@ async function runLexicalQuery(params: {
     FROM "Photo" p
     LEFT JOIN "Asset" thumb ON thumb."photoId" = p."id" AND thumb."type" = 'THUMB'::"AssetType"
     LEFT JOIN "Asset" preview ON preview."photoId" = p."id" AND preview."type" = 'PREVIEW'::"AssetType"
-    WHERE ${Prisma.join(commonFilters, " AND ")}
+    WHERE ${join(commonFilters, " AND ")}
       AND (
         lower(COALESCE(p."caption", '')) LIKE ${likePattern}
         OR p."tags" && ${tokenArray}
@@ -368,14 +368,14 @@ export async function GET(req: Request) {
   const semanticOnlyMaxDistance = DEFAULT_SEMANTIC_ONLY_MAX_DISTANCE;
   const semanticOnlyMinSeparation = DEFAULT_SEMANTIC_ONLY_MIN_SEPARATION;
 
-  const commonFilters: Prisma.Sql[] = [Prisma.sql`p."status" = 'READY'::"PhotoStatus"`, Prisma.sql`thumb."key" IS NOT NULL`];
-  if (cameraModel) commonFilters.push(Prisma.sql`p."cameraModel" = ${cameraModel}`);
-  if (lensModel) commonFilters.push(Prisma.sql`p."lensModel" = ${lensModel}`);
-  if (takenAfter) commonFilters.push(Prisma.sql`p."takenAt" >= ${takenAfter}`);
-  if (takenBefore) commonFilters.push(Prisma.sql`p."takenAt" <= ${takenBefore}`);
-  if (demoOnly) commonFilters.push(Prisma.sql`p."isDemo" = true`);
-  if (hasGps === true) commonFilters.push(Prisma.sql`p."gpsLat" IS NOT NULL AND p."gpsLon" IS NOT NULL`);
-  if (hasGps === false) commonFilters.push(Prisma.sql`(p."gpsLat" IS NULL OR p."gpsLon" IS NULL)`);
+  const commonFilters: Sql[] = [sql`p."status" = 'READY'::"PhotoStatus"`, sql`thumb."key" IS NOT NULL`];
+  if (cameraModel) commonFilters.push(sql`p."cameraModel" = ${cameraModel}`);
+  if (lensModel) commonFilters.push(sql`p."lensModel" = ${lensModel}`);
+  if (takenAfter) commonFilters.push(sql`p."takenAt" >= ${takenAfter}`);
+  if (takenBefore) commonFilters.push(sql`p."takenAt" <= ${takenBefore}`);
+  if (demoOnly) commonFilters.push(sql`p."isDemo" = true`);
+  if (hasGps === true) commonFilters.push(sql`p."gpsLat" IS NOT NULL AND p."gpsLon" IS NOT NULL`);
+  if (hasGps === false) commonFilters.push(sql`(p."gpsLat" IS NULL OR p."gpsLon" IS NULL)`);
 
   try {
     if (!q) {
@@ -398,7 +398,7 @@ export async function GET(req: Request) {
         FROM "Photo" p
         LEFT JOIN "Asset" thumb ON thumb."photoId" = p."id" AND thumb."type" = 'THUMB'::"AssetType"
         LEFT JOIN "Asset" preview ON preview."photoId" = p."id" AND preview."type" = 'PREVIEW'::"AssetType"
-        WHERE ${Prisma.join(commonFilters, " AND ")}
+        WHERE ${join(commonFilters, " AND ")}
         ORDER BY p."createdAt" DESC, p."id" DESC
         LIMIT ${limit}
       `;
@@ -408,7 +408,7 @@ export async function GET(req: Request) {
     }
 
     const orderBy =
-      sort === "newest" ? Prisma.sql`p."createdAt" DESC, p."id" DESC` : Prisma.sql`"dist" ASC, p."createdAt" DESC, p."id" DESC`;
+      sort === "newest" ? sql`p."createdAt" DESC, p."id" DESC` : sql`"dist" ASC, p."createdAt" DESC, p."id" DESC`;
     const tokens = tokenizeQuery(q);
 
     if (isLowSignalQuery(q)) {
