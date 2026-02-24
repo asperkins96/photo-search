@@ -10,4 +10,9 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  datasource: {
+    // Prisma 7 expects datasource URLs in prisma.config.ts.
+    // Fallback keeps build-time generate from failing when DATABASE_URL is not injected.
+    url: process.env["DATABASE_URL"] ?? "postgresql://postgres:postgres@localhost:5432/photos",
+  },
 });
