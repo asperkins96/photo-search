@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "worker:dev": "node --env-file=.env.local --env-file=.env --import=tsx worker/index.ts",
+    "worker:dev": "node --env-file=.env --env-file=.env.local --import=tsx worker/index.ts",
     "worker:start": "node --import=tsx worker/index.ts",
     "build": "npm run prisma:generate && next build",
     "start": "next start",
