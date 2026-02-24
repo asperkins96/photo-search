@@ -1,4 +1,4 @@
-import { AssetType, Prisma } from "@prisma/client";
+import { AssetType } from "@prisma/client";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@/lib/prisma";
@@ -85,18 +85,17 @@ export async function getGalleryPage(cursor?: string | null, options?: { demoOnl
   const parsedCursor = parseCursor(cursor);
   const demoOnly = options?.demoOnly ?? false;
 
-  const where: Prisma.PhotoWhereInput = {
-    status: "READY",
-    assets: { some: { type: "THUMB" } },
-    ...(demoOnly ? { isDemo: true } : {}),
-  };
-
-  if (parsedCursor) {
-    where.OR = [{ createdAt: { lt: parsedCursor.createdAt } }, { createdAt: parsedCursor.createdAt, id: { lt: parsedCursor.id } }];
-  }
-
   const rows = (await prisma.photo.findMany({
-    where,
+    where: {
+      status: "READY",
+      assets: { some: { type: "THUMB" } },
+      ...(demoOnly ? { isDemo: true } : {}),
+      ...(parsedCursor
+        ? {
+            OR: [{ createdAt: { lt: parsedCursor.createdAt } }, { createdAt: parsedCursor.createdAt, id: { lt: parsedCursor.id } }],
+          }
+        : {}),
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: PAGE_SIZE + 1,
     select: {

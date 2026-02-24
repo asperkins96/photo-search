@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { sqltag as sql } from "@prisma/client/runtime/client";
 import { prisma } from "@/lib/prisma";
 import { resolveAssetUrl, type GalleryPhoto } from "@/lib/gallery";
 
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     WHERE q."photoId" = ${photoId}
       AND q."vector" IS NOT NULL
       AND thumb."key" IS NOT NULL
-      ${demoOnly ? Prisma.sql`AND p."isDemo" = true` : Prisma.sql``}
+      ${demoOnly ? sql`AND p."isDemo" = true` : sql``}
     ORDER BY e."vector" <-> q."vector" ASC
     LIMIT ${limit}
   `;
