@@ -27,9 +27,7 @@ export async function DELETE(_: Request, context: { params: Promise<{ photoId: s
 
   const derivativeKeys = Array.from(
     new Set(
-      photo.assets
-        .map((asset: { key: string }) => asset.key)
-        .filter((key): key is string => Boolean(key))
+      photo.assets.map((asset) => asset.key)
     )
   );
 
