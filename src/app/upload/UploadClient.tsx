@@ -35,10 +35,18 @@ function uploadFileToSignedUrl(file: File, uploadUrl: string, onProgress: (progr
         onProgress(100);
         resolve();
       } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
+        const details = xhr.responseText ? `: ${xhr.responseText.slice(0, 200)}` : "";
+        reject(new Error(`Upload failed with status ${xhr.status}${details}`));
       }
     };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.onerror = () =>
+      reject(
+        new Error(
+          "Network error during upload. This is usually an R2 CORS/preflight issue; allow PUT from your app origin."
+        )
+      );
+    xhr.onabort = () => reject(new Error("Upload aborted"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
     xhr.send(file);
   });
 }

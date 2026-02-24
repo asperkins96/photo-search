@@ -25,6 +25,25 @@ Photo archive app with:
    - read/write for originals bucket
    - read/write for derivatives bucket
 
+## Required R2 CORS (for browser direct uploads)
+Uploads use a browser `PUT` to a signed R2 URL. Your originals bucket must allow CORS from your web origin(s), or the browser will show a generic network error.
+
+Set CORS on `R2_BUCKET_ORIGINALS` to include:
+- Allowed origins:
+  - `https://<your-vercel-domain>`
+  - `http://localhost:3000` (for local dev)
+- Allowed methods:
+  - `PUT`
+  - `GET`
+  - `HEAD`
+- Allowed headers:
+  - `Content-Type`
+  - `*` (optional, simplest if you prefer)
+- Expose headers:
+  - `ETag`
+- Max age:
+  - `3600`
+
 ## Install
 ```bash
 npm install
