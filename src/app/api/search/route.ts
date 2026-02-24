@@ -407,8 +407,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ query: q, filters: { cameraModel, lensModel, hasGps, takenAfter, takenBefore }, results });
     }
 
-    const promptVectors = await Promise.all(buildQueryPromptEnsemble(q).map((prompt) => embedTextQuery(prompt)));
-    const vectorLiterals = promptVectors.map((vector) => `[${vector.join(",")}]`);
     const orderBy =
       sort === "newest" ? Prisma.sql`p."createdAt" DESC, p."id" DESC` : Prisma.sql`"dist" ASC, p."createdAt" DESC, p."id" DESC`;
     const tokens = tokenizeQuery(q);
@@ -428,10 +426,17 @@ export async function GET(req: Request) {
     }
 
     const fetchLimit = Math.min(MAX_LIMIT, Math.max(limit * 3, limit));
-    const [semanticRows, lexicalRows] = await Promise.all([
-      runSemanticQuery({ vectorLiterals, limit: fetchLimit, orderBy, commonFilters }),
-      runLexicalQuery({ query: q, tokens, limit: fetchLimit, commonFilters }),
-    ]);
+    let semanticRows: SearchRow[] = [];
+    let semanticError: string | null = null;
+    try {
+      const promptVectors = await Promise.all(buildQueryPromptEnsemble(q).map((prompt) => embedTextQuery(prompt)));
+      const vectorLiterals = promptVectors.map((vector) => `[${vector.join(",")}]`);
+      semanticRows = await runSemanticQuery({ vectorLiterals, limit: fetchLimit, orderBy, commonFilters });
+    } catch (error) {
+      semanticError = error instanceof Error ? error.message : "semantic embedder unavailable";
+    }
+
+    const lexicalRows = await runLexicalQuery({ query: q, tokens, limit: fetchLimit, commonFilters });
     const rankedRows = semanticRows.filter((row) => row.dist !== null);
 
     let bestDistance: number | null = null;
@@ -469,6 +474,7 @@ export async function GET(req: Request) {
             separation,
             semanticOnlyMaxDistance,
             semanticOnlyMinSeparation,
+            semanticError,
           },
           results: [],
         });
@@ -540,6 +546,7 @@ export async function GET(req: Request) {
           averageTopDistance,
           separation,
           bestFinalScore,
+          semanticError,
         },
         results: [],
       });
@@ -557,6 +564,7 @@ export async function GET(req: Request) {
         averageTopDistance,
         separation,
         bestFinalScore,
+        semanticError,
       },
       results,
     });

@@ -1,14 +1,5 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `vector` on the `Embedding` table. All the data in the column will be lost.
-
-*/
--- DropIndex
-DROP INDEX "Embedding_vector_idx";
-
--- DropIndex
-DROP INDEX "Photo_tags_gin_idx";
-
--- AlterTable
-ALTER TABLE "Embedding" DROP COLUMN "vector";
+-- No-op migration.
+--
+-- This migration previously dropped Embedding.vector and related indexes, which
+-- breaks semantic search and conflicts with the current schema.
+-- Keep this migration as an empty checkpoint so migration history remains linear.
