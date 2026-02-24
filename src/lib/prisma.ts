@@ -23,7 +23,9 @@ export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
     const client = getPrismaClient() as unknown as Record<string | symbol, unknown>;
     const value = Reflect.get(client, prop, receiver);
-    if (typeof value === "function") return (value as Function).bind(client);
+    if (typeof value === "function") {
+      return (value as (...args: unknown[]) => unknown).bind(client);
+    }
     return value;
   },
 });

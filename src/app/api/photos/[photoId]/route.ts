@@ -38,11 +38,11 @@ export async function DELETE(_: Request, context: { params: Promise<{ photoId: s
       derivativeKeys.map((key) => r2.send(new DeleteObjectCommand({ Bucket: derivativesBucket, Key: key })))
     );
 
-    await prisma.$transaction(async (tx) => {
-      if (photo.embedding) await tx.embedding.delete({ where: { photoId: photo.id } });
-      await tx.asset.deleteMany({ where: { photoId: photo.id } });
-      await tx.photo.delete({ where: { id: photo.id } });
-    });
+    await prisma.$transaction([
+      prisma.embedding.deleteMany({ where: { photoId: photo.id } }),
+      prisma.asset.deleteMany({ where: { photoId: photo.id } }),
+      prisma.photo.delete({ where: { id: photo.id } }),
+    ]);
 
     return NextResponse.json({ ok: true, photoId });
   } catch (error) {

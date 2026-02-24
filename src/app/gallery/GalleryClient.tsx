@@ -117,7 +117,6 @@ const DEMO_QUERY_CHIPS = ["couple", "night portrait", "boat", "street scene", "k
 
 export default function GalleryClient({
   initialPhotos,
-  initialCursor: _initialCursor,
   initialQuery = "",
   initialDemoOnly = false,
 }: GalleryClientProps) {

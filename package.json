@@ -2,6 +2,9 @@
   "name": "photo-search",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev",
     "worker:dev": "node --env-file=.env.local --env-file=.env --import=tsx worker/index.ts",
